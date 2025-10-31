@@ -4,17 +4,17 @@ The setup.py file is an essential part of packaging and distribution Python Proj
 '''
 
 from setuptools import find_packages, setup
-from typing import list
+from typing import List
 
 
-def get_requirements() ->list[str]:
+def get_requirements() ->List[str]:
     '''
     this function will return list of requirements
     '''
     requirement_list:list[str]=[]
     
     try:
-        with open('requirements.txt', 'r') as file:
+        with open(r'D:\GitHub\MLOPs-ETL-Pipelines-Network-Security-System\requirements.txt', 'r') as file:
             #read lines from the file
             lines = file.readlines()
             
