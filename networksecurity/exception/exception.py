@@ -1,4 +1,12 @@
 import sys
+import os
+
+ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
+sys.path.append(os.path.abspath(ROOT_DIR))
+
+from networksecurity.logging import logger
+
+
 
 class NetworkSecurityException(Exception):
     def __init__(self,error_message,error_details:sys):
@@ -13,10 +21,14 @@ class NetworkSecurityException(Exception):
         self.file_name, self.lineno, str(self.error_message))
         
         
-if __name__=="__main__":
-    try:
-        a = 1/0
-        print("this will not be printed",a)
-    except Exception as e:
-        raise NetworkSecurityException(e,sys)
+# code for testin logging and exceptions
+        
+# if __name__=="__main__":
+#     try:
+        
+#         logger.logging.info("Enter the try block")
+#         a = 1/0
+#         print("this will not be printed",a)
+#     except Exception as e:
+#         raise NetworkSecurityException(e,sys)
         
