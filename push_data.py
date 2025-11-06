@@ -53,6 +53,6 @@ if __name__=='__main__':
     DATABASE = "RAIMAL"
     Collection = "NetworkData"
     networkobj = NetworkDataExtract()
-    records = etworkobj.csv_to_json_convertor(file_path = FILE_PATH)
+    records = networkobj.csv_to_json_convertor(file_path = FILE_PATH)
     no_of_records = networkobj.inert_data_monogo(records, DATABASE,Collection)
     print(records)
