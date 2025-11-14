@@ -65,4 +65,4 @@ if __name__ == '__main__':
     networkobj = NetworkDataExtract()
     records = networkobj.csv_to_json_converter(file_path=FILE_PATH)
     no_of_records = networkobj.insert_data_mongodb(records, DATABASE, COLLECTION)
-    print(f"✅ Successfully inserted {no_of_records} records into MongoDB Atlas.")
+    print(f" Successfully inserted {no_of_records} records into MongoDB Atlas.")
