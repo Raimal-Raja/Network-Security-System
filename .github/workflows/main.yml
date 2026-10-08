@@ -1,59 +1,64 @@
-name: workflow
+name: Network security checks and delivery
 
 on:
-    push:
-        branches:
-            - main
-        paths-ignore:
-            - 'README.md'
+  push:
+    branches: [main]
+    paths-ignore: ['README.md', 'REPOSITORY_DESCRIPTION.md']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish_image:
+        description: Publish the Docker image to configured Amazon ECR
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
-    integration:
-        name: Continuous Integration
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@v3
+  integration:
+    name: Source and regression checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install regression-test dependencies
+        run: python -m pip install numpy scikit-learn pyyaml
+      - name: Check Python syntax
+        run: python -m compileall -q networksecurity app.py main.py push_data.py setup.py
+      - name: Run offline unit tests
+        run: python -m unittest discover -s tests -v
 
-            - name: Lint code
-              run: echo "Linting repository"
-
-            - name: Run unit tests
-              run: echo "Running unit tests"
-    build-and-push-ecr-image:
-        name: Continuous Delivery
-        needs: integration
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@v3
-
-            - name: Install Utilities
-              run: |
-                sudo apt-get  update
-                sudo apt-get install -y jp unzip
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                aws-region: ${{ secrets.AWS_REGION }}
-
-            - name: Login to Amazon ECR
-              id: login-ecr
-              uses: aws-actions/amazon-ecr-login@v1
-
-
-            - name: Build, tag, and push  image to Amazon ECR
-              id: build-image
-              env:
-                ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-                ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
-                IMAGE_TAG: latest
-              run: |
-                # Build a docker container and
-                # push it to ECR so that it can
-                # be deployed to ECS.
-                docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-                docker push $ECR_RESGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-                echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+  build-and-push-ecr-image:
+    name: Optional Amazon ECR delivery
+    needs: integration
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_image && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag and push image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test -n "$ECR_REPOSITORY"
+          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"

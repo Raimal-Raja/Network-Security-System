@@ -6,7 +6,6 @@ import numpy as np
 # import dill
 import pickle
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import r2_score
 
 
 def read_yaml_file(file_path: str) -> dict:
@@ -23,7 +22,7 @@ def write_yaml_file(file_path: str, content:object, replace: bool = False) -> No
             if os.path.exists(file_path):
                 os.remove(file_path)
                 
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
         with open(file_path, 'w') as file:
             yaml.dump(content, file)
     except Exception as e:
@@ -36,7 +35,7 @@ def save_numpy_array_data(file_path: str, array:np.array):
     '''
     try:
         dir_path = os.path.dirname(file_path)
-        os.makedirs(dir_path,exist_ok=True)
+        os.makedirs(dir_path or ".",exist_ok=True)
         with open(file_path, 'wb') as file_obj:
             np.save(file_obj, array)
         
@@ -47,7 +46,7 @@ def save_numpy_array_data(file_path: str, array:np.array):
 def save_object(file_path: str, obj:object) -> None:
     try:
         logging.info('Entered the save_object method of mainutils class')
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
         with open(file_path, 'wb') as file_obj:
             pickle.dump(obj, file_obj)
             
@@ -82,29 +81,19 @@ def load_numpy_array_data(file_path: str) -> np.array:
         raise NetworkSecurityException(e,sys) from e
     
 
-def evaluate_models(x_train, y_train,x_test,y_test, models,param):
+def evaluate_models(x_train, y_train, x_test, y_test, models, param):
+    """Select classifiers using training-only cross-validation macro F1.
+
+    The held-out test arguments remain for compatibility. They are deliberately
+    unused here; the trainer evaluates the selected model on them afterward.
+    """
     try:
-        report  = {}
-        for i in range(len(list(models))):
-            model = list(models.values())[i]
-            para = param[list(models.keys())[i]]
-            
-            gs = GridSearchCV(model,para,cv=3)
-            gs.fit(x_train,y_train)
-            
-            model.set_params(**gs.best_params_)
-            model.fit(x_train,y_train)
-            
-            # model.fit(x_train, y_train) #Train model
-            
-            y_train_pred =  model.predict(x_train)
-            y_test_pred = model.predict(x_test)
-            
-            train_model_score = r2_score(y_train,y_train_pred)
-            test_model_score = r2_score(y_test,y_test_pred)
-            report[list(models.keys())[i]] = test_model_score
-            
+        report = {}
+        for name, model in list(models.items()):
+            search = GridSearchCV(model, param[name], cv=3, scoring="f1_macro")
+            search.fit(x_train, y_train)
+            models[name] = search.best_estimator_
+            report[name] = float(search.best_score_)
         return report
     except Exception as e:
-        raise NetworkSecurityException(e,sys)
-    
+        raise NetworkSecurityException(e, sys) from e
