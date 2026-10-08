@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 mongo_db_url = os.getenv("MONGODB_URL_KEY")
-print(mongo_db_url)
 
 import pymongo
 from networksecurity.exception.exception import NetworkSecurityException
@@ -45,7 +44,8 @@ app.add_middleware(
 
 
 from fastapi.templating import Jinja2Templates
-templates = Jinja2Templates(directory="templates")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @app.get("/",tags=["authentication"])
 async def index():
@@ -66,8 +66,8 @@ async def predict_route(request: Request, file: UploadFile = File(...)):
     try:
         df = pd.read_csv(file.file)
 
-        preprocessor = load_object("final_model/preprocessor.pkl")
-        final_model = load_object("final_model/model.pkl")
+        preprocessor = load_object(os.path.join(BASE_DIR, "final_model", "preprocessor.pkl"))
+        final_model = load_object(os.path.join(BASE_DIR, "final_model", "model.pkl"))
 
         network_model = NetworkModel(
             preprocessor=preprocessor,
@@ -77,8 +77,9 @@ async def predict_route(request: Request, file: UploadFile = File(...)):
         y_pred = network_model.predict(df)
         df["predicted_column"] = y_pred
 
-        os.makedirs("prediction_output", exist_ok=True)
-        df.to_csv("prediction_output/output.csv", index=False)
+        output_dir = os.path.join(BASE_DIR, "prediction_output")
+        os.makedirs(output_dir, exist_ok=True)
+        df.to_csv(os.path.join(output_dir, "output.csv"), index=False)
 
         table_html = df.to_html(classes="table table-striped")
 
