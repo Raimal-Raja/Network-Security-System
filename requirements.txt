@@ -1,16 +1,14 @@
+# Runtime, training, and experiment-tracking dependencies.
 python-dotenv
 pandas
 numpy
-pymongo
+pymongo[srv]>=4.6,<5
 certifi
-pymongo[srv]==3.11
 scikit-learn
-pyaml
+PyYAML
 mlflow
 dagshub
 fastapi
 uvicorn
-
-# -e .
-
-
+python-multipart
+Jinja2
