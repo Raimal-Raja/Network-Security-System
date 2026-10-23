@@ -1,76 +1,87 @@
-# Network-Security-System
+# Network Security — ML Training and FastAPI
 
 Machine-learning pipeline and FastAPI application for network-security classification, training, and CSV prediction.
 
-## Setup and repository reference
+## Project focus
 
-### Project structure
+Application / engineering project. The sections below separate the runnable entry point, source layout, prerequisites, and verification path.
 
-- [Dockerfile](Dockerfile)
-- [LICENSE](LICENSE)
-- [Network_data](Network_data)
-- [app.py](app.py)
-- [data_schema](data_schema)
-- [final_model](final_model)
-- [main.py](main.py)
-- [networksecurity](networksecurity)
-- [prediction_output](prediction_output)
-- [push_data.py](push_data.py)
-- [requirements.txt](requirements.txt)
-- [setup.py](setup.py)
-- [templates](templates)
-- [test_mongodb.py](test_mongodb.py)
-- [valid_data](valid_data)
+## Architecture
 
-### Getting started
+```mermaid
+flowchart TD
+    A["Network data / MongoDB"] --> B["Ingestion and validation"]
+    B --> C["Transformation and model training"]
+    C --> D["Serialized model and preprocessor"]
+    E["CSV upload to FastAPI"] --> F["Prediction pipeline"]
+    D --> F
+    F --> G["Prediction table and output CSV"]
+```
+
+## Repository structure
+
+| Path | Purpose |
+| --- | --- |
+| [`.github/`](.github) | Repository automation and workflows. |
+| [`Dockerfile`](Dockerfile) | Container image build instructions. |
+| [`LICENSE`](LICENSE) | Repository licensing terms. |
+| [`Network_data/`](Network_data) | Project-specific source, resources, or learning material. |
+| [`app.py`](app.py) | Application entry point or route definitions. |
+| [`data_schema/`](data_schema) | Project-specific source, resources, or learning material. |
+| [`final_model/`](final_model) | Serialized inference model and preprocessing artifacts. |
+| [`main.py`](main.py) | Program or workflow entry point. |
+| [`networksecurity/`](networksecurity) | Data ingestion, validation, transformation, training, and prediction modules. |
+| [`prediction_output/`](prediction_output) | Project-specific source, resources, or learning material. |
+| [`push_data.py`](push_data.py) | Python application helper or learning example. |
+| [`requirements.txt`](requirements.txt) | Python dependency manifest. |
+| [`setup.py`](setup.py) | Python application helper or learning example. |
+| [`templates/`](templates) | Server-rendered HTML templates. |
+| [`test_mongodb.py`](test_mongodb.py) | MongoDB connectivity example; configure credentials locally before use. |
+| [`tests/`](tests) | Automated checks and regression cases. |
+| [`valid_data/`](valid_data) | Project-specific source, resources, or learning material. |
+
+## Getting started
 
 ```bash
 git clone https://github.com/Raimal-Raja/Network-Security-System.git
 cd Network-Security-System
 ```
 
-Create and activate a virtual environment, then install the project dependencies:
-
 ```bash
 python -m venv .venv
-# Linux/macOS: source .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -r "requirements.txt"
+source .venv/bin/activate
 ```
 
-Application entry point:
+On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead.
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Configure the MongoDB connection expected by the source and make trusted inference artifacts available in `final_model/`.
 
 ```bash
 python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-### Configuration and limitations
+Model training is a separate workflow. Do not assume `pip install -e .` is portable: inspect the existing `setup.py` before using that installation route.
 
-Training requires MongoDB configuration and may synchronize artifacts to S3. Model selection now uses training-fold macro F1 rather than test-set regression scores. Held-out classification metrics are computed after selection. Preprocessing is currently fitted before cross-validation, so fully fold-isolated preprocessing remains future work. Live training and saved-model inference were not exercised.
+## Configuration and scope
 
-Pushes and pull requests run source checks and offline regression tests. Amazon ECR delivery is explicitly selected through workflow_dispatch with publish_image enabled on main. Configure valid AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION and ECR_REPOSITORY_NAME secrets before delivery. The prior delivery run failed because its AWS security token was invalid; this audit cannot repair account credentials.
+Training and data ingestion require a configured MongoDB connection. Inference requires compatible trusted model/preprocessor artifacts. Dependency repair does not rotate account credentials, retrain models, or repair unrelated source-code regressions.
 
-### Maintenance fixes
-
-- Resolve prediction models, templates, and output paths relative to app.py.
-- Remove MongoDB URL printing.
-- Evaluate pipeline timestamps when each configuration is created.
-- Select classifiers using training-only cross-validation macro F1.
-- Support saving artifacts directly in the current directory.
-- Replace placeholder CI commands with real syntax/regression checks and correct the ECR registry variable.
-
-### Validation
-
-Recorded checks from the previous maintenance review (2026-10-08): 32 existing Python files passed syntax checks; changed files and new regression tests were checked separately. 2 regression tests passed. Syntax checks do not establish full runtime correctness. External APIs, live scraping, GUI interaction, notebook training and production deployment were not comprehensively exercised.
+## Verification
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-### Contributions
+Install the selected project dependencies and optional test prerequisites first. Some integration checks require model artifacts, databases, or external services.
 
-Describe the issue, reproduction steps, environment, and expected behavior when proposing a change. Keep generated environments, credentials, and unnecessary build artifacts out of new commits.
+## Contributing
 
-### License
+Include reproduction steps, the affected path, expected behavior, and the checks you ran. Keep credentials, generated environments, and unnecessary build artifacts out of commits.
 
-See [LICENSE](LICENSE) for the repository’s licensing terms.
+## License
+
+See [LICENSE](LICENSE) for the repository's license.
